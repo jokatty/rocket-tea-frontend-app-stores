@@ -6,8 +6,6 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getIncomingOrders, getAcceptedOrders, markOrderAccepted, markOrderComplete } from '../../utils/dbQuery.mjs';
 import { getCookie } from '../../utils/cookie.mjs';
-import IncomingOrdersTable from './IncomingOrdersTable.jsx';
-import NavBar from '../NavBar/NavBar.jsx';
 
 /* =================================================================== */
 /* ================================================ CONTEXT / REDUCERS */
@@ -19,7 +17,7 @@ import { SocketContext, socket } from '../../context/Socket.jsx';
 /* ============================================================== MAIN */
 /* =================================================================== */
 
-export default function StoreApp() {
+export default function AcceptedOrdersTable() {
   // On page load. If user is not logged in, route to login page
   const { isLoggedIn } = useContext(isLoggedInContext);
   const history = useHistory();
@@ -56,9 +54,6 @@ export default function StoreApp() {
     fetchData();
   }, [triggerRender]);
 
-  console.log('ACCEPTED ORDERS');
-  console.log(acceptedOrders);
-
   const handleAcceptClick = async (orderId) => {
     await markOrderAccepted(orderId);
     setTriggerRender(() => Math.random());
@@ -72,9 +67,22 @@ export default function StoreApp() {
   /* =========================================================== RENDER */
   return (
     <SocketContext.Provider value={socket}>
-      <NavBar />
       <h1>INCOMING ORDERS</h1>
-      <IncomingOrdersTable />
+      {incomingOrders.map((order) => (
+        <div key={order.orderTableData.id}>
+          <p>
+            {`Receipt Num: ${order.orderTableData.receiptNum}`}
+          </p>
+          <p>
+            {`Order Time: ${order.orderTableData.pickUpTime}`}
+          </p>
+          <p>
+            {`Items in order: ${order.orderItemsTableData.length}`}
+          </p>
+          <button type="button" onClick={() => handleAcceptClick(order.orderTableData.id)}>Accept order</button>
+          <hr />
+        </div>
+      ))}
       <h1>ACCEPTED ORDERS</h1>
       {acceptedOrders.map((order) => (
         <div key={order.orderTableData.id}>
