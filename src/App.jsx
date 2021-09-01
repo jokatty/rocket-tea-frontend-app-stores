@@ -20,8 +20,9 @@ function App() {
     <Router>
       <Switch>
         <IsLoggedInProvider>
-          <Route path="/login" exact component={Login} />
           <Route path="/store/:id" exact component={StoreApp} />
+          <Route path="/login" exact component={Login} />
+          <Route path="/" exact component={Login} />
         </IsLoggedInProvider>
       </Switch>
     </Router>
