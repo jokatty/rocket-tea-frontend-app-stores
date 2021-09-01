@@ -31,7 +31,7 @@ function createData(receiptNum, pickUpTime, totalItems, id) {
 /* ============================================================== MAIN */
 /* =================================================================== */
 
-export default function IncomingOrdersTable() {
+export default function IncomingOrdersTable({ setTriggerRender }) {
   // On page load. If user is not logged in, route to login page
   const { isLoggedIn } = useContext(isLoggedInContext);
   const history = useHistory();
@@ -42,7 +42,6 @@ export default function IncomingOrdersTable() {
   // State management
   const [incomingOrders, setIncomingOrders] = useState([]);
   const [tableRows, setTableRows] = useState([[]]);
-  const [triggerRender, setTriggerRender] = useState([]);
 
   useEffect(() => {
     console.log('re-rendering incoming orders');
@@ -50,7 +49,6 @@ export default function IncomingOrdersTable() {
     // For MVP Socket updates all stores when a customer places an order
     // Goal is to have socket only update the relavant store
     socket.on('INCOMING-ORDER', (message) => {
-      console.log(message);
       fetchData();
     });
     // ================================================= SOCKET MVP
@@ -67,12 +65,11 @@ export default function IncomingOrdersTable() {
         const rowToAdd = createData(orderTableData.receiptNum, orderTableData.pickUpTime, orderItemsTableData.length, orderTableData.id);
         return rowToAdd;
       });
-      console.log(rows);
       setTableRows(() => rows);
     };
 
     fetchData();
-  }, [triggerRender]);
+  }, []);
 
   const handleAcceptClick = async (orderId) => {
     await markOrderAccepted(orderId);
@@ -99,17 +96,18 @@ export default function IncomingOrdersTable() {
                 sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
               >
                 <TableCell component="th" scope="row">
+                  #
                   {row.receiptNum}
                 </TableCell>
                 <TableCell>{row.pickUpTime}</TableCell>
                 <TableCell>{row.totalItems}</TableCell>
-                <TableCell>
+                <TableCell align="right">
                   <Button
                     variant="contained"
                     color="primary"
                     onClick={() => handleAcceptClick(row.id)}
                   >
-                    Accept
+                    Accept Order
                   </Button>
                 </TableCell>
               </TableRow>
