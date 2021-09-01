@@ -70,8 +70,6 @@ export default function SingleAcceptedOrder({ orderData, setOpenModel, setTrigge
   const { orderItemsTableData, orderTableData } = orderData;
   const [open, setOpen] = React.useState(true);
 
-  console.log(orderItemsTableData);
-
   const handleClose = () => {
     const doLater = () => {
       setOpenModel(() => false);
