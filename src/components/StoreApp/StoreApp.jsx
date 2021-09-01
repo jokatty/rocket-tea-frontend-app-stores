@@ -4,8 +4,16 @@
 import React, { useState, useContext, useEffect } from 'react';
 // eslint-disable-next-line import/no-cycle
 import { useHistory } from 'react-router-dom';
+import Typography from '@material-ui/core/Typography';
+import { makeStyles } from '@material-ui/core/styles';
+import Divider from '@material-ui/core/Divider';
+import Box from '@material-ui/core/Box';
 import { getIncomingOrders, getAcceptedOrders, markOrderAccepted, markOrderComplete } from '../../utils/dbQuery.mjs';
 import { getCookie } from '../../utils/cookie.mjs';
+import IncomingOrdersTable from './IncomingOrdersTable.jsx';
+import AcceptedOrdersTable from './AcceptedOrdersTable.jsx';
+import SingleAcceptedOrder from './SingleAcceptedOrder.jsx';
+import NavBar from '../NavBar/NavBar.jsx';
 
 /* =================================================================== */
 /* ================================================ CONTEXT / REDUCERS */
@@ -13,11 +21,28 @@ import { getCookie } from '../../utils/cookie.mjs';
 import { isLoggedInContext } from '../../context/IsLoggedIn.jsx';
 import { SocketContext, socket } from '../../context/Socket.jsx';
 
+const useStyles = makeStyles((theme) => ({
+  root: {
+    padding: '2rem',
+  },
+  tableParent: {
+    marginBottom: '2rem',
+  },
+  acceptedOrders: {
+    color: '#FA275A',
+  },
+  incomingdOrders: {
+    color: '#008000',
+  },
+
+}));
+
 /* =================================================================== */
 /* ============================================================== MAIN */
 /* =================================================================== */
 
 export default function StoreApp() {
+  const classes = useStyles();
   // On page load. If user is not logged in, route to login page
   const { isLoggedIn } = useContext(isLoggedInContext);
   const history = useHistory();
@@ -26,79 +51,42 @@ export default function StoreApp() {
   }
 
   // State management
-  const [incomingOrders, setIncomingOrders] = useState([]);
-  const [acceptedOrders, setAcceptedOrders] = useState([]);
+  const [openModel, setOpenModel] = useState(false);
+  const [viewSingleAcceptedOrder, setViewSingleAcceptedOrder] = useState();
   const [triggerRender, setTriggerRender] = useState([]);
 
-  useEffect(() => {
-    console.log('re-rendering');
-    // ================================================= SOCKET MVP
-    // For MVP Socket updates all stores when a customer places an order
-    // Goal is to have socket only update the relavant store
-    socket.on('INCOMING-ORDER', (message) => {
-      console.log(message);
-      fetchData();
-    });
-    // ================================================= SOCKET MVP
+  const ComponentToRender = () => {
+    if (openModel) {
+      return (
+        <SingleAcceptedOrder orderData={viewSingleAcceptedOrder} setOpenModel={setOpenModel} setTriggerRender={setTriggerRender} />
+      );
+    }
+    return (
+      <>
+        <Box className={classes.tableParent}>
+          <Typography variant="h6" noWrap className={classes.incomingdOrders}>
+            INCOMING ORDERS
+          </Typography>
+          <IncomingOrdersTable setTriggerRender={setTriggerRender} />
+        </Box>
 
-    // fetch data on page load
-    const fetchData = async () => {
-      const storeId = getCookie('storeId');
-      const incomingOrdersData = await getIncomingOrders(storeId);
-      setIncomingOrders(() => incomingOrdersData);
-      const acceptedOrdersData = await getAcceptedOrders(storeId);
-      setAcceptedOrders(() => acceptedOrdersData);
-      // const allOrders = await getOrders(getCookie('storeId'));
-      // setStoreOrders(() => allOrders);
-    };
-    fetchData();
-  }, [triggerRender]);
-
-  const handleAcceptClick = async (orderId) => {
-    await markOrderAccepted(orderId);
-    setTriggerRender(() => Math.random());
-  };
-
-  const handleCompleteClick = async (orderId) => {
-    await markOrderComplete(orderId);
-    setTriggerRender(() => Math.random());
+        <Box className={classes.tableParent}>
+          <Typography variant="h5" noWrap className={classes.acceptedOrders}>
+            ACCEPTED ORDERS
+          </Typography>
+          <AcceptedOrdersTable setOpenModel={setOpenModel} setViewSingleAcceptedOrder={setViewSingleAcceptedOrder} setTriggerRender={setTriggerRender} />
+        </Box>
+      </>
+    );
   };
 
   /* =========================================================== RENDER */
   return (
     <SocketContext.Provider value={socket}>
-      <h1>INCOMING ORDERS</h1>
-      {incomingOrders.map((order) => (
-        <div key={order.orderTableData.id}>
-          <p>
-            {`Receipt Num: ${order.orderTableData.receiptNum}`}
-          </p>
-          <p>
-            {`Order Time: ${order.orderTableData.pickUpTime}`}
-          </p>
-          <p>
-            {`Items in order: ${order.orderItemsTableData.length}`}
-          </p>
-          <button type="button" onClick={() => handleAcceptClick(order.orderTableData.id)}>Accept order</button>
-          <hr />
-        </div>
-      ))}
-      <h1>ACCEPTED ORDERS</h1>
-      {acceptedOrders.map((order) => (
-        <div key={order.orderTableData.id}>
-          <p>
-            {`Receipt Num: ${order.orderTableData.receiptNum}`}
-          </p>
-          <p>
-            {`Order Time: ${order.orderTableData.pickUpTime}`}
-          </p>
-          <p>
-            {`Items in order: ${order.orderItemsTableData.length}`}
-          </p>
-          <button type="button" onClick={() => handleCompleteClick(order.orderTableData.id)}>Completed</button>
-          <hr />
-        </div>
-      ))}
+      <NavBar />
+      <div className={classes.root}>
+        <ComponentToRender />
+      </div>
     </SocketContext.Provider>
   );
 }
